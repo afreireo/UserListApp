@@ -4,11 +4,9 @@ import java.io.Serializable;
 
 public class User implements Serializable {
     private Name name;
-    private Picture picture;
-    private Location location;
     private String email;
-
-    // Getters and Setters
+    private Location location;
+    private Picture picture;
 
     public Name getName() {
         return name;
@@ -16,22 +14,6 @@ public class User implements Serializable {
 
     public void setName(Name name) {
         this.name = name;
-    }
-
-    public Picture getPicture() {
-        return picture;
-    }
-
-    public void setPicture(Picture picture) {
-        this.picture = picture;
-    }
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public void setLocation(Location location) {
-        this.location = location;
     }
 
     public String getEmail() {
@@ -42,11 +24,25 @@ public class User implements Serializable {
         this.email = email;
     }
 
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
+    public Picture getPicture() {
+        return picture;
+    }
+
+    public void setPicture(Picture picture) {
+        this.picture = picture;
+    }
+
     public static class Name implements Serializable {
         private String first;
         private String last;
-
-        // Getters and Setters
 
         public String getFirst() {
             return first;
@@ -65,26 +61,18 @@ public class User implements Serializable {
         }
     }
 
-    public static class Picture implements Serializable {
-        private String large;
-
-        // Getters and Setters
-
-        public String getLarge() {
-            return large;
-        }
-
-        public void setLarge(String large) {
-            this.large = large;
-        }
-    }
-
     public static class Location implements Serializable {
+        private String country;
         private double latitude;
         private double longitude;
-        private String country;
 
-        // Getters and Setters
+        public String getCountry() {
+            return country;
+        }
+
+        public void setCountry(String country) {
+            this.country = country;
+        }
 
         public double getLatitude() {
             return latitude;
@@ -101,13 +89,17 @@ public class User implements Serializable {
         public void setLongitude(double longitude) {
             this.longitude = longitude;
         }
+    }
 
-        public String getCountry() {
-            return country;
+    public static class Picture implements Serializable {
+        private String large;
+
+        public String getLarge() {
+            return large;
         }
 
-        public void setCountry(String country) {
-            this.country = country;
+        public void setLarge(String large) {
+            this.large = large;
         }
     }
 }

@@ -1,23 +1,23 @@
 package com.example.userlistapp;
 
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity";
     private RecyclerView recyclerView;
     private UserAdapter userAdapter;
 
@@ -32,27 +32,28 @@ public class MainActivity extends AppCompatActivity {
         userAdapter = new UserAdapter();
         recyclerView.setAdapter(userAdapter);
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://randomuser.me/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        fetchUsers();
+    }
 
-        UserApiService apiService = retrofit.create(UserApiService.class);
+    private void fetchUsers() {
+        new Thread(() -> {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url("https://randomuser.me/api/?results=20") // Modify the URL as needed
+                    .build();
 
-        apiService.getUsers().enqueue(new Callback<UserResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<UserResponse> call, @NonNull Response<UserResponse> response) {
-                if (response.isSuccessful()) {
-                    userAdapter.setUsers(response.body().getResults());
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to load data", Toast.LENGTH_SHORT).show();
-                }
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+
+                String responseData = response.body().string();
+                Type userListType = new TypeToken<List<User>>() {}.getType();
+                UserResponse userResponse = new Gson().fromJson(responseData, UserResponse.class);
+                List<User> users = userResponse.getResults();
+
+                runOnUiThread(() -> userAdapter.setUsers(users));
+            } catch (IOException e) {
+                Log.e(TAG, "Error fetching users", e);
             }
-
-            @Override
-            public void onFailure(@NonNull Call<UserResponse> call, @NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, "Network error", Toast.LENGTH_SHORT).show();
-            }
-        });
+        }).start();
     }
 }
