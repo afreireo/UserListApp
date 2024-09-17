@@ -1,22 +1,25 @@
 package com.example.userlistapp;
 
+
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import java.util.ArrayList;
-import java.util.List;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
-    private UserAdapter adapter;
-    private List<User> userList;
+    private UserAdapter userAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,31 +29,29 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        userList = new ArrayList<>();
-        adapter = new UserAdapter(this, userList);
-        recyclerView.setAdapter(adapter);
+        userAdapter = new UserAdapter();
+        recyclerView.setAdapter(userAdapter);
 
-        fetchUsers();
-    }
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://randomuser.me/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
 
-    private void fetchUsers() {
-        ApiService apiService = RetrofitClient.getRetrofitInstance().create(ApiService.class);
-        Call<UserResponse> call = apiService.getUsers(20); // Cambia el número según sea necesario
-        call.enqueue(new Callback<UserResponse>() {
+        UserApiService apiService = retrofit.create(UserApiService.class);
+
+        apiService.getUsers().enqueue(new Callback<UserResponse>() {
             @Override
-            public void onResponse(Call<UserResponse> call, Response<UserResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    userList.clear();
-                    userList.addAll(response.body().getResults());
-                    adapter.notifyDataSetChanged();
+            public void onResponse(@NonNull Call<UserResponse> call, @NonNull Response<UserResponse> response) {
+                if (response.isSuccessful()) {
+                    userAdapter.setUsers(response.body().getResults());
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to retrieve data", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Failed to load data", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<UserResponse> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            public void onFailure(@NonNull Call<UserResponse> call, @NonNull Throwable t) {
+                Toast.makeText(MainActivity.this, "Network error", Toast.LENGTH_SHORT).show();
             }
         });
     }

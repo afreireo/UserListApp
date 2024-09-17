@@ -4,36 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import com.bumptech.glide.Glide;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.MapView;
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.widget.ImageView;
-import android.widget.TextView;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import com.bumptech.glide.Glide;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.MapView;
 
-import android.content.Intent;
-import android.os.Bundle;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -41,42 +14,47 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.squareup.picasso.Picasso;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 public class UserDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private ImageView profileImageView;
-    private ImageView flagImageView;
-    private TextView nameTextView;
-    private TextView emailTextView;
-    private TextView phoneTextView;
     private GoogleMap mMap;
+    private User user;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_detail);
 
-        profileImageView = findViewById(R.id.profile_image);
-        flagImageView = findViewById(R.id.flag_image);
-        nameTextView = findViewById(R.id.name_text);
-        emailTextView = findViewById(R.id.email_text);
-        phoneTextView = findViewById(R.id.phone_text);
-
         Intent intent = getIntent();
-        User user = (User) intent.getSerializableExtra("USER");
+        if (intent != null && intent.hasExtra("user")) {
+            user = (User) intent.getSerializableExtra("user");
+        }
+
+        TextView nameTextView = findViewById(R.id.name_text_view);
+        TextView emailTextView = findViewById(R.id.email_text_view);
+        TextView countryTextView = findViewById(R.id.country_text_view);
+        ImageView profileImageView = findViewById(R.id.profile_image_view);
+        ImageView flagImageView = findViewById(R.id.flag_image_view);
 
         if (user != null) {
             nameTextView.setText(user.getName().getFirst() + " " + user.getName().getLast());
             emailTextView.setText(user.getEmail());
-            phoneTextView.setText(user.getPhone());
-            Picasso.get().load(user.getPicture().getLarge()).into(profileImageView);
-            // Asumiendo que la bandera del país está en el campo 'nat'
-            Picasso.get().load("https://www.countryflags.io/" + user.getNat() + "/flat/64.png").into(flagImageView);
+            countryTextView.setText(user.getLocation().getCountry());
 
-            // Configuración del mapa
-            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            Picasso.get()
+                    .load(user.getPicture().getLarge())
+                    .into(profileImageView);
+
+            // Load flag image
+            String countryCode = getCountryCode(user.getLocation().getCountry());
+            String flagUrl = "https://flagcdn.com/w320/" + countryCode.toLowerCase() + ".png";
+            Picasso.get()
+                    .load(flagUrl)
+                    .into(flagImageView);
+
+            // Initialize map
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
             if (mapFragment != null) {
                 mapFragment.getMapAsync(this);
             }
@@ -86,8 +64,21 @@ public class UserDetailActivity extends AppCompatActivity implements OnMapReadyC
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        LatLng userLocation = new LatLng(-34, 151); // Default location, replace with user location
-        mMap.addMarker(new MarkerOptions().position(userLocation).title("User Location"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 10));
+
+        if (user != null) {
+            LatLng userLocation = new LatLng(user.getLocation().getLatitude(), user.getLocation().getLongitude());
+            mMap.addMarker(new MarkerOptions().position(userLocation).title(user.getLocation().getCountry()));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 10));
+        }
+    }
+
+    private String getCountryCode(String countryName) {
+        // Map country name to country code
+        switch (countryName.toLowerCase()) {
+            case "switzerland": return "ch";
+            // Add more cases as needed
+            default: return "us"; // Default to US flag if unknown
+        }
     }
 }
+
